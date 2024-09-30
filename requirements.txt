@@ -1,0 +1,11 @@
+asgiref==3.8.1
+Django==5.1
+django-appconf==1.0.6
+django-datatable==0.3.1
+django-redis==5.4.0
+django-select2==8.2.1
+mysqlclient==2.2.4
+pip==24.2
+redis==5.0.8
+sqlparse==0.5.1
+tzdata==2024.1
