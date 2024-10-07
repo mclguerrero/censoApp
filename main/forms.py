@@ -126,7 +126,7 @@ class UsuarioForm(forms.ModelForm):
             except (ValueError, TypeError):
                 pass  # Si no hay zona seleccionada, no se cambia la localidad
         elif self.instance.pk:  # Si estamos editando un usuario existente
-            self.fields['localidad'].queryset = self.instance.zona.localidades.all()  # Cambia según tu relación
+            self.fields['localidad'].queryset = self.instance.zona.localidad_set.all().order_by('nombre')
         
 
 

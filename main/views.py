@@ -1,6 +1,6 @@
 from django import forms
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Evento
+from .models import Evento, Usuario, Localidad
 from .forms import CustomUserCreationForm, CustomAuthenticationForm, EventoForm, UsuarioForm
 from django.contrib.auth.models import Group, User
 from django.db import IntegrityError
@@ -8,6 +8,13 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.files.storage import default_storage
+from django.http import HttpResponse, JsonResponse
+
+# usuarios
+
+def listar_usuarios(request):
+    usuarios = Usuario.objects.all().select_related('identificacion', 'genero', 'estadoCivil', 'escolaridad', 'profesion')
+    return render(request, 'usuarios/listar.html', {'usuarios': usuarios})
 
 def crear_usuario(request):    
     if request.method == 'POST':
@@ -64,7 +71,42 @@ def crear_usuario(request):
     
     return render(request, 'usuarios/crear.html', {'form': form})
 
+def actualizar_usuario(request, pk):
+    usuario = get_object_or_404(Usuario, pk=pk)
+    form = UsuarioForm(instance=usuario)  # Cargar el formulario al inicio
 
+    if request.method == 'POST':
+        form = UsuarioForm(request.POST, instance=usuario)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'El usuario se ha editado correctamente.')
+            return redirect('listar_usuarios')
+        else:
+            messages.warning(request, 'Hay errores en el formulario. Por favor corrige los campos indicados.')  # Solo se muestra si hay errores
+
+    return render(request, 'usuarios/editar.html', {'form': form})
+
+def eliminar_usuario(request, pk):
+    usuario = get_object_or_404(Usuario, pk=pk)
+    
+    try:
+        user = usuario.user
+        user.delete()
+        messages.success(request, 'El usuario se ha eliminado correctamente.')
+    except Exception as e:
+        print(f"Error al eliminar el usuario: {e}")
+
+    usuario.delete()
+    return redirect('listar_usuarios')
+
+def get_localidades(request):
+    if request.method == "GET" and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        zona_id = request.GET.get('zona', None)
+        localidades = Localidad.objects.filter(zona_id=zona_id).values('id', 'nombre')
+        return JsonResponse(list(localidades), safe=False)
+    else:
+        return JsonResponse({'error': 'No se permite esta solicitud'}, status=400)
+   
 # eventos
 
 def listar_eventos(request):

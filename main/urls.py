@@ -1,11 +1,23 @@
 # urls
 
-from django.urls import path
+from django.urls import path, include
 from . import views
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+
+    #select2
+
+    path("select2/", include("django_select2.urls")),
+
+    #usuarios
+
+    path('user/new/', views.crear_usuario, name='crear_usuario'),
+    path('users/', views.listar_usuarios, name='listar_usuarios'),
+    path('user/<int:pk>/edit/', views.actualizar_usuario, name='actualizar_usuario'),
+    path('user/<int:pk>/delete/', views.eliminar_usuario, name='eliminar_usuario'),
+    path('get_localidades/', views.get_localidades, name='get_localidades'),
 
     path('user/new/', views.crear_usuario, name='crear_usuario'),
 
