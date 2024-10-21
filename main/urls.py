@@ -21,13 +21,37 @@ urlpatterns = [
 
     path('user/new/', views.crear_usuario, name='crear_usuario'),
 
+    # familias
+
+    path('families/', views.listar_familias, name='listar_familias'),
+    path('family/new/', views.crear_familia, name='crear_familia'),
+    path('families/<int:pk>/edit/', views.editar_familia, name='editar_familia'),
+    path('families/<int:pk>/delete/', views.eliminar_familia, name='eliminar_familia'),
+
+    # usuarios familias
+
+    path('user/family/', views.listar_usuario_familia, name='listar_usuario_familia'),
+    path('user/family/new/', views.crear_usuario_familia, name='crear_usuario_familia'),
+    path('user/family/<int:pk>/edit/', views.editar_usuario_familia, name='editar_usuario_familia'),
+    path('user/family/<int:pk>/delete/', views.eliminar_usuario_familia, name='eliminar_usuario_familia'),
+
+
     # eventos
 
     path('events/', views.listar_eventos, name='listar_eventos'),
     path('event/new/', views.crear_evento, name='crear_evento'),
-    path('event/<int:pk>/edit/', views.actualizar_evento, name='actualizar_evento'),
+    path('event/<int:pk>/edit/', views.editar_evento, name='editar_evento'),
     path('event/<int:pk>/delete/', views.eliminar_evento, name='eliminar_evento'),
 
+    # usuarios eventos
+
+    path('users/events/', views.listar_usuarios_eventos, name='listar_usuarios_eventos'),
+    path('user/events/new/', views.crear_usuario_evento, name='crear_usuario_evento'),
+    path('user/events/<int:pk>/edit/', views.editar_usuario_evento, name='editar_usuario_evento'),
+    path('user/events/<int:pk>/delete/', views.eliminar_usuario_evento, name='eliminar_usuario_evento'),
+    path('events/<int:evento_id>/list/', views.listar_usuarios_por_evento, name='listar_usuarios_por_evento'),
+    path('events/<int:evento_id>/registrar_usuario/', views.registrar_usuario_a_evento, name='registrar_usuario_a_evento'),
+    path('assistance/user/<int:usuario_id>/', views.listar_asistencias_usuario, name='listar_asistencias_usuario'),
 
     # login
 

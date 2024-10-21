@@ -1,10 +1,11 @@
 import re
 from django import forms
-from .models import Usuario, TipoIdentificacion, TipoGenero, TipoEstadoCivil, TipoEscolaridad, TipoProfesion, Evento, Zona, Localidad
+from .models import UsuarioEvento, TipoParentesco, UsuarioFamilia, Familia, Usuario, TipoIdentificacion, TipoGenero, TipoEstadoCivil, TipoEscolaridad, TipoProfesion, Evento, Zona, Localidad
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.core.exceptions import ValidationError
 from datetime import date
 from django.contrib.auth.models import User
+from django_select2 import forms as s2forms
 
 # usuarios
 
@@ -128,7 +129,48 @@ class UsuarioForm(forms.ModelForm):
         elif self.instance.pk:  # Si estamos editando un usuario existente
             self.fields['localidad'].queryset = self.instance.zona.localidad_set.all().order_by('nombre')
         
+# familia
 
+class FamiliaForm(forms.ModelForm):
+    class Meta:
+        model = Familia
+        fields = ['n_familia']
+
+        widgets = {
+            'n_familia': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+# usuario familia
+
+class UserSearch(s2forms.ModelSelect2Widget):
+    search_fields = [
+        'nombres__icontains',
+        'apellidos__icontains',
+        'n_documento__icontains',
+    ]
+
+    def label_from_instance(self, obj):
+        return f"{obj.nombres} {obj.apellidos} - {obj.identificacion.codigo} - {obj.n_documento}"
+    
+class FamiliaSearch(s2forms.ModelSelect2Widget):
+    search_fields = ['n_familia__icontains',]
+        
+class UsuarioFamiliaForm(forms.ModelForm):
+    class Meta:
+        model = UsuarioFamilia
+        fields = ['usuario', 'familia', 'parentesco']
+
+        widgets = {
+            'usuario': UserSearch(attrs={'class': 'form-select'}),
+            'familia': FamiliaSearch(attrs={'class': 'form-select'}),
+            'parentesco': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+    parentesco = forms.ModelChoiceField(
+        queryset=TipoParentesco.objects.all(),
+        empty_label="Selecciona parentesco",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
 
 # evento
 
@@ -158,6 +200,27 @@ class EventoForm(forms.ModelForm):
         if not re.match(r'^[a-zA-ZñÑ0-9\s]{3,}$', nombre):
             raise ValidationError('El campo "Nombre" solo puede contener letras y debe tener al menos 3 caracteres.')
         return nombre
+
+# usuario evento UsuarioEvento
+
+class EventoSearch(s2forms.ModelSelect2Widget):
+    search_fields = ['nombre__icontains',]
+
+class UsuarioEventoForm(forms.ModelForm):
+    class Meta:
+        model = UsuarioEvento
+        fields = ['usuario', 'evento', 'fecha_asistencia', 'asistencia']
+
+        widgets = {
+            'usuario': UserSearch(attrs={'class': 'form-select'}),
+            'evento': EventoSearch(attrs={'class': 'form-select'}),
+            'fecha_asistencia': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'asistencia': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(UsuarioEventoForm, self).__init__(*args, **kwargs)
+        self.fields['fecha_asistencia'].initial = date.today()
 
 # login
 
