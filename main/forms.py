@@ -86,7 +86,7 @@ class UsuarioForm(forms.ModelForm):
         apellidos = self.cleaned_data.get('apellidos')
         if not apellidos:
             raise ValidationError('El campo "Apellidos" es obligatorio.')
-        if not re.match(r'^[a-zA-Z\s]{3,}$', apellidos):
+        if not re.match(r'^[a-zA-ZñÑ\s]{3,}$', apellidos):
             raise ValidationError('El campo "Apellidos" solo puede contener letras y debe tener al menos 3 caracteres.')
         return apellidos
 
@@ -112,10 +112,10 @@ class UsuarioForm(forms.ModelForm):
         return telefono
 
     def clean_direccion(self):
-        direccion = self.cleaned_data.get('direccion')
-        if len(direccion) < 3:
-            raise ValidationError('La "Dirección" debe contener al menos 3 caracteres.')
-        return direccion    
+        direccion = self.cleaned_data.get("direccion")
+        if direccion and len(direccion) < 3:
+            raise forms.ValidationError("La dirección debe tener al menos 3 caracteres.")
+        return direccion
 
     def __init__(self, *args, **kwargs):
         super(UsuarioForm, self).__init__(*args, **kwargs)
@@ -177,13 +177,13 @@ class UsuarioFamiliaForm(forms.ModelForm):
 class EventoForm(forms.ModelForm):
     class Meta:
         model = Evento
-        fields = ['nombre', 'descripcion', 'imagen', 'fecha_inicio', 'fecha_fin', 'es_favorito'] 
+        fields = ['nombre', 'descripcion', 'imagen', 'fecha_inicio', 'fecha_fin', 'es_favorito']
 
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'imagen': forms.FileInput(attrs={'class': 'form-control'}),
-            'fecha_inicio': forms.DateInput(attrs={'class': 'form-control','type': 'date'}),
+            'fecha_inicio': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'fecha_fin': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'es_favorito': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
@@ -193,14 +193,23 @@ class EventoForm(forms.ModelForm):
         self.fields['fecha_inicio'].initial = date.today()
         self.fields['fecha_fin'].initial = date.today()
 
-    def clean_nombres(self):
+    def clean_nombre(self):
         nombre = self.cleaned_data.get('nombre')
         if not nombre:
             raise ValidationError('El campo "Nombre" es obligatorio.')
         if not re.match(r'^[a-zA-ZñÑ0-9\s]{3,}$', nombre):
-            raise ValidationError('El campo "Nombre" solo puede contener letras y debe tener al menos 3 caracteres.')
+            raise ValidationError('El campo "Nombre" solo puede contener letras y números y debe tener al menos 3 caracteres.')
         return nombre
 
+    def clean_fecha_fin(self):
+        fecha_inicio = self.cleaned_data.get('fecha_inicio')
+        fecha_fin = self.cleaned_data.get('fecha_fin')
+
+        if fecha_fin <= fecha_inicio:
+            raise ValidationError('La fecha de fin debe ser posterior a la fecha de inicio.')
+        
+        return fecha_fin    
+    
 # usuario evento UsuarioEvento
 
 class EventoSearch(s2forms.ModelSelect2Widget):
