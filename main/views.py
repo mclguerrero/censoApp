@@ -10,13 +10,74 @@ from django.contrib import messages
 from django.core.files.storage import default_storage
 from django.http import HttpResponse, JsonResponse
 from django.utils.timezone import timedelta
+from .context_processors import admin_required
+
+# ROL usuario
+
+@login_required
+def ver_infopersonal(request):
+    try:
+        # Obtener el perfil del usuario
+        usuario = Usuario.objects.get(user=request.user)
+    except Usuario.DoesNotExist:
+        # Si no existe el perfil, pasar usuario como None para manejar en la plantilla
+        usuario = None
+
+    # Si el perfil existe, verificar si hay datos incompletos
+    datos_incompletos = False
+    if usuario:
+        campos_requeridos = [
+            usuario.nombres, usuario.apellidos, usuario.n_documento,
+            usuario.fecha_nacimiento, usuario.direccion, usuario.telefono,
+            usuario.identificacion, usuario.genero,
+            usuario.estadoCivil, usuario.escolaridad, usuario.profesion
+        ]
+        datos_incompletos = any(campo in [None, ''] for campo in campos_requeridos)
+
+    return render(request, 'usuarios/ver.html', {'usuario': usuario, 'datos_incompletos': datos_incompletos})
+
+@login_required
+def ver_mifamilia(request):
+    try:
+        # Obtener el perfil del usuario relacionado con el usuario autenticado
+        usuario_actual = request.user.usuario
+    except Usuario.DoesNotExist:
+        # Si no existe el perfil, pasar como None para manejar en la plantilla
+        usuario_actual = None
+    
+    # Inicializar variables para el contexto
+    familia_actual = None
+    usuario_familias = []
+
+    if usuario_actual:
+        try:
+            # Intentar obtener la relación del usuario con su familia
+            usuario_familia_actual = UsuarioFamilia.objects.get(usuario=usuario_actual)
+            familia_actual = usuario_familia_actual.familia
+            usuario_familias = UsuarioFamilia.objects.filter(familia=familia_actual)
+        except UsuarioFamilia.DoesNotExist:
+            # Si no existe la relación, mantener las variables vacías
+            familia_actual = None
+            usuario_familias = []
+
+    context = {
+        'usuario_familias': usuario_familias,
+        'familia_actual': familia_actual,
+        'usuario_actual': usuario_actual,  # Opcional, si quieres mostrar información del usuario
+    }
+
+    return render(request, 'usuarios/usuarios_familias/listar.html', context)
+
 
 # usuarios
-
+@login_required
+@admin_required
 def listar_usuarios(request):
     usuarios = Usuario.objects.all().select_related('identificacion', 'genero', 'estadoCivil', 'escolaridad', 'profesion')
     return render(request, 'usuarios/listar.html', {'usuarios': usuarios})
 
+@login_required
+@admin_required
 def crear_usuario(request):    
     if request.method == 'POST':
         form = UsuarioForm(request.POST)
@@ -72,6 +133,8 @@ def crear_usuario(request):
     
     return render(request, 'usuarios/crear.html', {'form': form})
 
+@login_required
+@admin_required
 def actualizar_usuario(request, pk):
     usuario = get_object_or_404(Usuario, pk=pk)
     form = UsuarioForm(instance=usuario)  # Cargar el formulario al inicio
@@ -87,6 +150,8 @@ def actualizar_usuario(request, pk):
 
     return render(request, 'usuarios/editar.html', {'form': form})
 
+@login_required
+@admin_required
 def eliminar_usuario(request, pk):
     usuario = get_object_or_404(Usuario, pk=pk)
     
@@ -100,6 +165,8 @@ def eliminar_usuario(request, pk):
     usuario.delete()
     return redirect('listar_usuarios')
 
+@login_required
+@admin_required
 def get_localidades(request):
     if request.method == "GET" and request.headers.get('x-requested-with') == 'XMLHttpRequest':
         zona_id = request.GET.get('zona', None)
@@ -110,10 +177,14 @@ def get_localidades(request):
    
 # familias
 
+@login_required
+@admin_required
 def listar_familias(request):
     familias = Familia.objects.all()
     return render(request, 'usuarios/familias/listar.html', {'familias': familias})
 
+@login_required
+@admin_required
 def crear_familia(request):
     if request.method == 'POST':
         form = FamiliaForm(request.POST)
@@ -125,6 +196,8 @@ def crear_familia(request):
         form = FamiliaForm()
     return render(request, 'usuarios/familias/crear.html', {'form': form})
 
+@login_required
+@admin_required
 def editar_familia(request, pk):
     familia = get_object_or_404(Familia, pk=pk)
     if request.method == 'POST':
@@ -137,6 +210,8 @@ def editar_familia(request, pk):
         form = FamiliaForm(instance=familia)
     return render(request, 'usuarios/familias/editar.html', {'form': form})
 
+@login_required
+@admin_required
 def eliminar_familia(request, pk):
     familia = get_object_or_404(Familia, pk=pk)
     familia.delete()
@@ -145,10 +220,14 @@ def eliminar_familia(request, pk):
 
 # usuario familia 
 
+@login_required
+@admin_required
 def listar_usuario_familia(request):
     usuario_familias = UsuarioFamilia.objects.all()
     return render(request, 'usuarios/usuarios_familias/listar.html', {'usuario_familias': usuario_familias})
 
+@login_required
+@admin_required
 def crear_usuario_familia(request):
     if request.method == 'POST':
         form = UsuarioFamiliaForm(request.POST)
@@ -160,6 +239,8 @@ def crear_usuario_familia(request):
         form = UsuarioFamiliaForm()
     return render(request, 'usuarios/usuarios_familias/crear.html', {'form': form})
 
+@login_required
+@admin_required
 def editar_usuario_familia(request, pk):
     usuario_familia = get_object_or_404(UsuarioFamilia, pk=pk)
     if request.method == 'POST':
@@ -172,6 +253,8 @@ def editar_usuario_familia(request, pk):
         form = UsuarioFamiliaForm(instance=usuario_familia)
     return render(request, 'usuarios/usuarios_familias/actualizar.html', {'form': form})
 
+@login_required
+@admin_required
 def eliminar_usuario_familia(request, pk):
     usuario_familia = get_object_or_404(UsuarioFamilia, pk=pk)
     usuario_familia.delete()
@@ -180,11 +263,15 @@ def eliminar_usuario_familia(request, pk):
 
 # eventos
 
+@login_required
+@admin_required
 def listar_eventos(request):
     eventos = Evento.objects.all()
     context = {'eventos': eventos}
     return render(request, 'eventos/listar.html', context)
 
+@login_required
+@admin_required
 def crear_evento(request):
     if request.method == 'POST':
         form = EventoForm(request.POST, request.FILES)  
@@ -198,6 +285,8 @@ def crear_evento(request):
     context = {'form': form}
     return render(request, 'eventos/crear.html', context)
 
+@login_required
+@admin_required
 def editar_evento(request, pk):
     evento = get_object_or_404(Evento, pk=pk)
     if request.method == 'POST':
@@ -212,6 +301,8 @@ def editar_evento(request, pk):
     context = {'form': form}
     return render(request, 'eventos/editar.html', context)
 
+@login_required
+@admin_required
 def eliminar_evento(request, pk):
     evento = get_object_or_404(Evento, pk=pk)
 
@@ -226,6 +317,8 @@ def eliminar_evento(request, pk):
 
 # usuarios eventos
 
+@login_required
+@admin_required
 def crear_usuario_evento(request):
     if request.method == 'POST':
         form = UsuarioEventoForm(request.POST)
@@ -255,11 +348,15 @@ def crear_usuario_evento(request):
     context = {'form': form}
     return render(request, 'eventos/asistencias/crear.html', context)
 
+@login_required
+@admin_required
 def listar_usuarios_eventos(request):
     usuarios_eventos = UsuarioEvento.objects.all()
     context = {'usuarios_eventos': usuarios_eventos}
     return render(request, 'eventos/asistencias/listar.html', context)
 
+@login_required
+@admin_required
 def editar_usuario_evento(request, pk):
     usuario_evento = get_object_or_404(UsuarioEvento, pk=pk)
     evento_id = usuario_evento.evento.pk
@@ -286,6 +383,8 @@ def editar_usuario_evento(request, pk):
     }
     return render(request, 'eventos/asistencias/editar.html', context)
 
+@login_required
+@admin_required
 def eliminar_usuario_evento(request, pk):
     usuario_evento = get_object_or_404(UsuarioEvento, pk=pk)
     usuario_id = usuario_evento.usuario.pk
@@ -294,6 +393,8 @@ def eliminar_usuario_evento(request, pk):
 
     return redirect('listar_asistencias_usuario', usuario_id=usuario_id)
 
+@login_required
+@admin_required
 def listar_usuarios_por_evento(request, evento_id):
     evento = get_object_or_404(Evento, pk=evento_id)
     
@@ -330,6 +431,8 @@ def listar_usuarios_por_evento(request, evento_id):
 
     return render(request, 'eventos/asistencias/listar_filtro.html', context)
 
+@login_required
+@admin_required
 def registrar_usuario_a_evento(request, evento_id=None):
     evento = get_object_or_404(Evento, pk=evento_id)
 
@@ -384,6 +487,8 @@ def registrar_usuario_a_evento(request, evento_id=None):
     }
     return render(request, 'eventos/asistencias/crear_filtro.html', context)
 
+@login_required
+@admin_required
 def listar_asistencias_usuario(request, usuario_id):
     usuario = get_object_or_404(Usuario, pk=usuario_id)  
     asistencias = UsuarioEvento.objects.filter(usuario=usuario)  
@@ -439,7 +544,7 @@ def signin(request):
         if user.groups.filter(name='Admin').exists():
             return redirect('listar_eventos')  
         elif user.groups.filter(name='Usuario').exists():
-            return redirect('listar_eventos')  
+            return redirect('ver_infopersonal')  
         else:
             return redirect('index')  
 
