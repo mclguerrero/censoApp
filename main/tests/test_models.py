@@ -106,4 +106,4 @@ class UsuarioEventoTests(TestCase):
             UsuarioEvento.objects.create(usuario=self.usuario, evento=self.evento, fecha_asistencia=date.today())
         logger.info("Prueba de unicidad de asistencia completada con éxito.")
 
-# Considera implementar pruebas de integración que verifiquen el comportamiento de varios modelos trabajando juntos.
+

@@ -45,7 +45,7 @@
                 {% if is_admin %}
                 <td>{{ usuario_familia.familia }}</td>
                 <td>
-                    <a href="{% url 'actualizar_usuario_familia' usuario_familia.pk %}" class="btn fa-solid fa-pen btn-sm" style="color: #ffc107;"></a>
+                    <a href="{% url 'editar_usuario_familia' usuario_familia.pk %}" class="btn fa-solid fa-pen btn-sm" style="color: #ffc107;"></a>
                     <a href="#" class="btn fa-solid fa-trash-can btn-sm btn-dlt" style="color: #dc3545;" data-type="usuario_familia" data-pk="{{ usuario_familia.pk }}" data-name="{{ usuario_familia.usuario.nombres }} {{ usuario_familia.usuario.apellidos }}"></a>                </td>
                 {% endif %}
             </tr>
