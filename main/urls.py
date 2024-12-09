@@ -1,5 +1,6 @@
 # urls
 
+from rest_framework.authtoken.views import obtain_auth_token
 from django.contrib import admin
 from django.urls import path, include
 from . import views
@@ -8,6 +9,7 @@ from django.conf.urls.static import static
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from main.permissions import IsAdminGroup
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -17,10 +19,11 @@ schema_view = get_schema_view(
         contact=openapi.Contact(email="soporte@censoapp.com"),
     ),
     public=True,
-    permission_classes=(permissions.AllowAny,),
+    permission_classes=(permissions.IsAuthenticated, IsAdminGroup),
 )
 
 urlpatterns = [
+    path('api-token-auth/', obtain_auth_token, name='api_token_auth'),
 
     path('api/v1/', include('main.api.v1.urls')),
 
